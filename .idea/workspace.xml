@@ -2,14 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="3c775584-6b3b-4f22-a169-2f09367915ad" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dir_sync.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/inc/functions.inc.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pipe.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/zfs-kstat-analyzer.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/zfs-zfetch-stats.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/zfs_rewrite_file.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -50,16 +43,27 @@
       <map>
         <entry key="MAIN">
           <value>
-            <State />
+            <State>
+              <option name="COLUMN_ORDER" />
+            </State>
           </value>
         </entry>
       </map>
     </option>
   </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Initial commit of some of the scripts." />
+    <MESSAGE value="Fixed an issue with excludes" />
+    <option name="LAST_COMMIT_MESSAGE" value="Fixed an issue with excludes" />
+  </component>
   <component name="WindowStateProjectService">
-    <state x="1503" y="299" key="CommitChangelistDialog2" timestamp="1592773702717">
+    <state x="1503" y="299" key="CommitChangelistDialog2" timestamp="1592774196000">
       <screen x="0" y="0" width="2560" height="1397" />
     </state>
-    <state x="1503" y="299" key="CommitChangelistDialog2/2560.-576.1440.2560/-1440.-577.1440.2560/0.0.2560.1397@0.0.2560.1397" timestamp="1592773702717" />
+    <state x="1503" y="299" key="CommitChangelistDialog2/2560.-576.1440.2560/-1440.-577.1440.2560/0.0.2560.1397@0.0.2560.1397" timestamp="1592774196000" />
+    <state x="1520" y="437" key="Vcs.Push.Dialog.v2" timestamp="1592774197989">
+      <screen x="0" y="0" width="2560" height="1397" />
+    </state>
+    <state x="1520" y="437" key="Vcs.Push.Dialog.v2/2560.-576.1440.2560/-1440.-577.1440.2560/0.0.2560.1397@0.0.2560.1397" timestamp="1592774197989" />
   </component>
 </project>
