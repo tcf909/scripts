@@ -204,12 +204,16 @@ echo "SYNCING DIRECTORIES (${DIR_DST} -> (${DIR_SRC})"
 # BI-DIRECTIONAL SYNC
 rsync -ahDHAXW --bwlimit=0 --no-compress --info=name1,progress2 --stats --update --exclude '/node_modules*' --exclude '/.sync*' "${DIR_DST}" "${DIR_SRC}"
 
-wait
+echo "FINAL SYNC..."
 
 rsync -ahDHAXW --bwlimit=0 --no-compress --update --exclude '/node_modules*' --exclude '/.sync*' "${DIR_SRC}" "${DIR_DST}" &
 
 # BI-DIRECTIONAL SYNC
 rsync -ahDHAXW --bwlimit=0 --no-compress --update --exclude '/node_modules*' --exclude '/.sync*' "${DIR_DST}" "${DIR_SRC}" &
+
+wait
+
+echo "INITIAL SYNC COMPLETE"
 
 while { IFS='|' read -r ${READ_TIMEOUT} -- EVENT SUBJECT; } || { DEBUG "READ TIMED OUT"; EVENT="TIMEOUT"; true; }; do
 
