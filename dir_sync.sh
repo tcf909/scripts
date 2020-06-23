@@ -8,8 +8,6 @@ source "${SCRIPT_DIR}/inc/functions.inc.sh"
 
 function OP_ATTRIB() {
 
-	DEBUG "OP_ATTRIB(${1-})"
-
 	[[ -z "${1-}" ]] && THROW "ERROR: MUST PROVIDE SOURCE AS FIRST ARGUMENT"
 
 	local SOURCE="${1}"
@@ -19,6 +17,8 @@ function OP_ATTRIB() {
 	local TARGET="${SOURCE/"${DIR_SRC}"/"${DIR_DST}"}"
 
 	[[ ! -e "${TARGET}" ]] && return 0 #THROW "ERROR: TARGET MUST EXIST"
+
+	OUTPUT "ATTRIB (${SOURCE} -> ${TARGET})"
 
 	touch --reference="${SOURCE}" "${TARGET}"
 
@@ -31,8 +31,6 @@ function OP_ATTRIB() {
 
 function OP_COPY() {
 
-	DEBUG "OP_COPY(${1-})"
-
 	[[ -z "${1-}" ]] && THROW "ERROR: MUST PROVIDE SOURCE AS FIRST ARGUMENT"
 
 	local SOURCE="${1}"
@@ -41,14 +39,16 @@ function OP_COPY() {
 
 	local TARGET="${SOURCE/"${DIR_SRC}"/"${DIR_DST}"}"
 
+	OUTPUT "COPY (${SOURCE} -> ${TARGET})"
+
+	mkdir -p "$(dirname "${TARGET}")"
+
 	cp -a "${SOURCE}" "${TARGET}"
 
 	return 0
 }
 
 function OP_CREATE() {
-
-	DEBUG "OP_CREATE(${1-})"
 
 	[[ -z "${1-}" ]] && THROW "MUST PROVIDE SOURCE AS FIRST ARGUMENT"
 
@@ -58,7 +58,9 @@ function OP_CREATE() {
 
 	local TARGET="${SOURCE/"${DIR_SRC}"/"${DIR_DST}"}"
 
-	DEBUG "OP_CREATE(${1-}) TARGET(${TARGET})"
+	OUTPUT "CREATE (${TARGET})"
+
+	mkdir -p "$(dirname "${TARGET}")"
 
 	echo "" > "${TARGET}"
 
@@ -73,8 +75,6 @@ function OP_CREATE() {
 
 function OP_MKDIR() {
 
-	DEBUG "OP_MKDIR(${1-})"
-
 	[[ -z "${1-}" ]] && THROW "MUST PROVIDE SOURCE AS FIRST ARGUMENT"
 
 	local SOURCE="${1}"
@@ -83,7 +83,7 @@ function OP_MKDIR() {
 
 	local TARGET="${SOURCE/"${DIR_SRC}"/"${DIR_DST}"}"
 
-	DEBUG "OP_MKDIR(${1-}) TARGET(${TARGET})"
+	OUTPUT "CREATE DIRECTORY (${TARGET})"
 
 	mkdir -p "${TARGET}"
 
@@ -98,8 +98,6 @@ function OP_MKDIR() {
 
 function OP_MOVE() {
 
-	DEBUG "OP_MOVE(${1-}, ${2-})"
-
 	[[ -z "${1-}" ]] && THROW "ERROR: MUST PROVIDE ORIGINAL SOURCE AS FIRST ARGUMENT"
 
 	local ORIG_SOURCE="${1}"
@@ -111,17 +109,17 @@ function OP_MOVE() {
 	[[ ! -e "${NEW_SOURCE}" ]] && return 0 #THROW "ERROR: NEW SOURCE MUST EXIST"
 
 	# If the we detect a move_from -> move_to of the same source we recopy the file to the target
-	[[ "${ORIG_SOURCE}" == "${NEW_SOURCE}" ]] && { OP_COPY "${NEW_SOURCE}"; return $?; }
+	[[ "${ORIG_SOURCE}" == "${NEW_SOURCE}" ]] && return 0
 
 	local ORIG_TARGET="${ORIG_SOURCE/"${DIR_SRC}"/"${DIR_DST}"}"
-
-	DEBUG "OP_MOVE(${1-}, ${2-}) ORIG_TARGET(${ORIG_TARGET})"
 
 	[[ ! -e "${ORIG_TARGET}" ]] && return 0 #THROW "ERROR: ORIGINAL TARGET MUST EXIST"
 
 	local NEW_TARGET="${NEW_SOURCE/"${DIR_SRC}"/"${DIR_DST}"}"
 
-	DEBUG "OP_MOVE(${1-}, ${2-}) NEW_TARGET(${NEW_TARGET})"
+	OUTPUT "MOVE (${ORIG_TARGET} -> ${NEW_TARGET})"
+
+	mkdir -p "$(dirname "${NEW_TARGET}")"
 
 	mv "${ORIG_TARGET}" "${NEW_TARGET}"
 
@@ -130,19 +128,17 @@ function OP_MOVE() {
 
 function OP_RM() {
 
-	DEBUG "OP_RM(${1-})"
-
 	[[ -z "${1-}" ]] && THROW "ERROR: MUST PROVIDE SOURCE AS FIRST ARGUMENT"
 
 	local SOURCE="${1}"
 
 	local TARGET="${SOURCE/"${DIR_SRC}"/"${DIR_DST}"}"
 
-	DEBUG "OP_RM(${1-}) TARGET(${TARGET})"
-
 	[[ ! -e "${TARGET}" ]] && return 0
 
 	[[ -d "${TARGET}" ]] && THROW "TARGET (${TARGET}) MUST NOT BE A DIRECTORY"
+
+	OUTPUT "REMOVE (${TARGET})"
 
 	rm "${TARGET}"
 
@@ -151,19 +147,17 @@ function OP_RM() {
 
 function OP_RMDIR() {
 
-	DEBUG "OP_RMDIR(${1-})"
-
 	[[ -z "${1-}" ]] && THROW "ERROR: MUST PROVIDE SOURCE AS FIRST ARGUMENT"
 
 	local SOURCE="${1}"
 
 	local TARGET="${SOURCE/"${DIR_SRC}"/"${DIR_DST}"}"
 
-	DEBUG "OP_RMDIR(${1-}) TARGET(${TARGET})"
-
 	[[ ! -e "${TARGET}" ]] && return 0
 
 	[[ ! -d "${TARGET}" ]] && THROW "TARGET (${TARGET}) MUST BE A DIRECTORY"
+
+	OUTPUT "REMOVE DIRECTORY (${TARGET})"
 
 	rmdir "${TARGET}"
 
@@ -201,12 +195,14 @@ trap "echo EXITING; exit 1" 11
 
 declare READ_TIMEOUT="" SUBJECT EVENT EVENT_PENDING EVENT_NEXT
 
-echo "SYNCING DIRECTORIES (${DIR_SRC}) (${DIR_DST})"
+echo "SYNCING DIRECTORIES (${DIR_SRC} -> (${DIR_DST})"
 
-rsync -ahDHAXW --bwlimit=0 --no-compress --info=name0,progress2 --stats --update --exclude '/node_modules*' --exclude '/.sync*' "${DIR_SRC}" "${DIR_DST}" &
+rsync -ahDHAXW --bwlimit=0 --no-compress --info=name1,progress2 --stats --update --exclude '/node_modules*' --exclude '/.sync*' "${DIR_SRC}" "${DIR_DST}"
+
+echo "SYNCING DIRECTORIES (${DIR_DST} -> (${DIR_SRC})"
 
 # BI-DIRECTIONAL SYNC
-rsync -ahDHAXW --bwlimit=0 --no-compress --info=name0,progress2 --stats --update --exclude '/node_modules*' --exclude '/.sync*' "${DIR_DST}" "${DIR_SRC}" &
+rsync -ahDHAXW --bwlimit=0 --no-compress --info=name1,progress2 --stats --update --exclude '/node_modules*' --exclude '/.sync*' "${DIR_DST}" "${DIR_SRC}"
 
 wait
 
@@ -227,8 +223,9 @@ while { IFS='|' read -r ${READ_TIMEOUT} -- EVENT SUBJECT; } || { DEBUG "READ TIM
 			DEBUG "EVENT_PENDING (${EVENT_PENDING[*]})"
 
 			# if we have a matching event pair for MOVED_(TO|FROM) compress the event to "RENAMED"
-			if [[ ( "${EVENT}" == "MOVED_TO" && "${EVENT_PENDING[0]}" == "MOVED_FROM" )
-				|| ( "${EVENT}" == "MOVED_TO,ISDIR" && "${EVENT_PENDING[0]}" == "MOVED_FROM,ISDIR" ) ]]; then
+			if [[ "${SUBJECT}" != "${EVENT_PENDING[1]}"
+					&& ( ( "${EVENT}" == "MOVED_TO" && "${EVENT_PENDING[0]}" == "MOVED_FROM" )
+						|| ( "${EVENT}" == "MOVED_TO,ISDIR" && "${EVENT_PENDING[0]}" == "MOVED_FROM,ISDIR" ) ) ]]; then
 
 				#HANDLE A RENAME
 				EVENT="${EVENT/"MOVED_TO"/"RENAMED"}"
@@ -261,15 +258,12 @@ while { IFS='|' read -r ${READ_TIMEOUT} -- EVENT SUBJECT; } || { DEBUG "READ TIM
 			"TIMEOUT")
 				;;
 			"ATTRIB")
-				OUTPUT "ATTRIB (${SUBJECT})"
 				OP_ATTRIB "${SUBJECT}"
 				;;
 			"ATTRIB,ISDIR")
-				OUTPUT "ATTRIB DIR (${SUBJECT})"
 				OP_ATTRIB "${SUBJECT}"
 				;;
 			"CLOSE_WRITE,CLOSE")
-				OUTPUT "UPDATE (${SUBJECT})"
 				OP_COPY "${SUBJECT}"
 				;;
 			"CREATE")
