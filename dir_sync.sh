@@ -14,11 +14,11 @@ function OP_ATTRIB() {
 
 	local SOURCE="${1}"
 
-	[[ ! -e "${SOURCE}" ]] && THROW "ERROR: SOURCE MUST EXIST"
+	[[ ! -e "${SOURCE}" ]] && return 0 #THROW "ERROR: SOURCE MUST EXIST"
 
 	local TARGET="${SOURCE/"${DIR_SRC}"/"${DIR_DST}"}"
 
-	[[ ! -e "${TARGET}" ]] && THROW "ERROR: TARGET MUST EXIST"
+	[[ ! -e "${TARGET}" ]] && return 0 #THROW "ERROR: TARGET MUST EXIST"
 
 	touch --reference="${SOURCE}" "${TARGET}"
 
@@ -37,7 +37,7 @@ function OP_COPY() {
 
 	local SOURCE="${1}"
 
-	[[ ! -e "${SOURCE}" ]] && THROW "ERROR: SOURCE MUST EXIST"
+	[[ ! -e "${SOURCE}" ]] && return 0 #THROW "ERROR: SOURCE MUST EXIST"
 
 	local TARGET="${SOURCE/"${DIR_SRC}"/"${DIR_DST}"}"
 
@@ -54,7 +54,7 @@ function OP_CREATE() {
 
 	local SOURCE="${1}"
 
-	[[ ! -f "${SOURCE}" ]] && THROW "SOURCE MUST BE A FILE"
+	[[ ! -f "${SOURCE}" ]] && return 0 #THROW "SOURCE MUST BE A FILE"
 
 	local TARGET="${SOURCE/"${DIR_SRC}"/"${DIR_DST}"}"
 
@@ -79,7 +79,7 @@ function OP_MKDIR() {
 
 	local SOURCE="${1}"
 
-	[[ ! -d "${SOURCE}" ]] && THROW "SOURCE MUST BE A DIRECTORY"
+	[[ ! -d "${SOURCE}" ]] && return 0 #THROW "SOURCE MUST BE A DIRECTORY"
 
 	local TARGET="${SOURCE/"${DIR_SRC}"/"${DIR_DST}"}"
 
@@ -108,13 +108,16 @@ function OP_MOVE() {
 
 	local NEW_SOURCE="${2}"
 
-	[[ ! -e "${NEW_SOURCE}" ]] && THROW "ERROR: NEW SOURCE MUST EXIST"
+	[[ ! -e "${NEW_SOURCE}" ]] && return 0 #THROW "ERROR: NEW SOURCE MUST EXIST"
+
+	# If the we detect a move_from -> move_to of the same source we recopy the file to the target
+	[[ "${ORIG_SOURCE}" == "${NEW_SOURCE}" ]] && { OP_COPY "${NEW_SOURCE}"; return $?; }
 
 	local ORIG_TARGET="${ORIG_SOURCE/"${DIR_SRC}"/"${DIR_DST}"}"
 
 	DEBUG "OP_MOVE(${1-}, ${2-}) ORIG_TARGET(${ORIG_TARGET})"
 
-	[[ ! -e "${ORIG_TARGET}" ]] && THROW "ERROR: ORIGINAL TARGET MUST EXIST"
+	[[ ! -e "${ORIG_TARGET}" ]] && return 0 #THROW "ERROR: ORIGINAL TARGET MUST EXIST"
 
 	local NEW_TARGET="${NEW_SOURCE/"${DIR_SRC}"/"${DIR_DST}"}"
 
@@ -137,12 +140,11 @@ function OP_RM() {
 
 	DEBUG "OP_RM(${1-}) TARGET(${TARGET})"
 
-	if [[ -e "${TARGET}" ]]; then
+	[[ ! -e "${TARGET}" ]] && return 0
 
-		[[ -d "${TARGET}" ]] && THROW "TARGET (${TARGET}) MUST NOT BE A DIRECTORY"
+	[[ -d "${TARGET}" ]] && THROW "TARGET (${TARGET}) MUST NOT BE A DIRECTORY"
 
-		rm "${TARGET}"
-	fi
+	rm "${TARGET}"
 
 	return 0
 }
@@ -159,13 +161,11 @@ function OP_RMDIR() {
 
 	DEBUG "OP_RMDIR(${1-}) TARGET(${TARGET})"
 
-	if [[ -e "${TARGET}" ]]; then
+	[[ ! -e "${TARGET}" ]] && return 0
 
-		[[ ! -d "${TARGET}" ]] && THROW "TARGET (${TARGET}) MUST BE A DIRECTORY"
+	[[ ! -d "${TARGET}" ]] && THROW "TARGET (${TARGET}) MUST BE A DIRECTORY"
 
-		rmdir "${TARGET}"
-
-	fi
+	rmdir "${TARGET}"
 
 	return 0
 }
