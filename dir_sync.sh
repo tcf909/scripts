@@ -271,19 +271,15 @@ while { IFS='|' read -r ${READ_TIMEOUT} -- EVENT SUBJECT; } || { DEBUG "READ TIM
 				OP_COPY "${SUBJECT}"
 				;;
 			"CREATE")
-				OUTPUT "CREATE (${SUBJECT})"
 				OP_CREATE "${SUBJECT}"
 				;; #IGNORE
 			"CREATE,ISDIR")
-				OUTPUT "CREATE DIR (${SUBJECT})"
 				OP_MKDIR "${SUBJECT}"
 				;;
 			"DELETE")
-				OUTPUT "DELETE (${SUBJECT})"
 				OP_RM "${SUBJECT}"
 				;;
 			"DELETE,ISDIR")
-				OUTPUT "DELETE DIR (${SUBJECT})"
 				OP_RMDIR "${SUBJECT}"
 				;;
 			"MOVED_FROM")
@@ -292,7 +288,6 @@ while { IFS='|' read -r ${READ_TIMEOUT} -- EVENT SUBJECT; } || { DEBUG "READ TIM
 					READ_TIMEOUT="-t .25"
 					break; #WAIT FOR THE NEXT EVENT OR THE TIMEOUT
 				else
-					OUTPUT "DELETE (${SUBJECT})"
 					OP_RM "${SUBJECT}"
 				fi
 				;;
@@ -302,26 +297,21 @@ while { IFS='|' read -r ${READ_TIMEOUT} -- EVENT SUBJECT; } || { DEBUG "READ TIM
 					READ_TIMEOUT="-t .25"
 					break; #WAIT FOR THE NEXT EVENT OR THE TIMEOUT
 				else
-					OUTPUT "DELETE DIR (${SUBJECT})"
 					OP_RMDIR "${SUBJECT}"
 				fi
 				;;
 			"MOVED_TO")
-				OUTPUT "UPDATE (${SUBJECT})"
 				OP_COPY "${SUBJECT}"
 				;;
 			"MOVED_TO,ISDIR")
-				OUTPUT "UPDATE DIR (${SUBJECT})"
 				OP_COPY "${SUBJECT}"
 				;;
 			"RENAMED")
 				#WE USE ${SUBJECT} AS AN ARRAY
-				OUTPUT "RENAME (${SUBJECT[0]} -> ${SUBJECT[1]})"
 				OP_MOVE "${SUBJECT[@]}"
 				;;
 			"RENAMED,ISDIR")
 				#WE USE ${SUBJECT} AS AN ARRAY
-				OUTPUT "RENAME DIR (${SUBJECT[0]} -> ${SUBJECT[1]})"
 				OP_MOVE "${SUBJECT[@]}"
 				;;
 			"DELETE_SELF")
