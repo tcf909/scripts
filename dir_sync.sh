@@ -43,7 +43,7 @@ function OP_COPY() {
 
 	mkdir -p "$(dirname "${TARGET}")"
 
-	cp -a "${SOURCE}" "${TARGET}"
+	cp -f -a "${SOURCE}" "${TARGET}"
 
 	return 0
 }
