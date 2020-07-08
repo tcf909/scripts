@@ -13,7 +13,7 @@ declare -A LOCK_READ_HANDLES=()
 declare -A LOCK_READ_HANDLE_COUNTS=()
 declare -A LOCK_WRITE_HANDLES=()
 declare -A LOCK_WRITE_HANDLE_COUNTS=()
-declare PIPE_TMP_DIR="${PIPE_TMP_DIR:-${SCRIPT_DIR}/.pipes}"
+declare PIPE_TMP_DIR="${PIPE_TMP_DIR:-/var/spool/pipe}"
 declare PIPE_OUTPUT_CMD_LOG="${PIPE_OUTPUT_CMD_LOG:-true}"
 declare PIPE_OUTPUT_CMD_LOG_REALTIME="${PIPE_OUTPUT_CMD_LOG_REALTIME:-false}"
 declare PIPE_QUEUE_IFS=${PIPE_QUEUE_IFS:-$'\n\t'}
@@ -48,7 +48,7 @@ function LOCK_READ(){
 
 	if [[ -n  "${LOCK_READ_HANDLES["${1}"]}" ]]; then
 
-		(( LOCK_READ_HANDLE_COUNTS[${1}]++ ))
+		((++LOCK_READ_HANDLE_COUNTS[${1}]))
 
 		OUTPUT "READ LOCK INCREMENTED (${1})"
 
@@ -98,7 +98,7 @@ function LOCK_READ_REMOVE() {
 
 	else
 
-		(( LOCK_READ_HANDLE_COUNTS[${1}]-- ))
+		((--LOCK_READ_HANDLE_COUNTS[${1}]))
 
 		OUTPUT "READ LOCK DECREMENTED (${1})"
 
@@ -113,7 +113,7 @@ function LOCK_WRITE(){
 
 	if [[ -n "${LOCK_WRITE_HANDLES["${1}"]-}" ]]; then
 
-		(( LOCK_WRITE_HANDLE_COUNTS[${1}]++ ))
+		((++LOCK_WRITE_HANDLE_COUNTS[${1}]))
 
 		OUTPUT "WRITE LOCK INCREMENTED (${1})"
 
@@ -163,7 +163,7 @@ function LOCK_WRITE_REMOVE() {
 
 	else
 
-		(( LOCK_READ_HANDLE_COUNTS[${1}]-- ))
+		((--LOCK_READ_HANDLE_COUNTS[${1}]))
 
 		OUTPUT "WRITE LOCK DECREMENTED (${1})"
 
@@ -362,7 +362,7 @@ function RUN() {
 
 	local QITEM="${1}"
 
-	local CMD_ACTUAL="${CMD/\{\}/$(printf "%q" "${QITEM-}")}"
+	local CMD_ACTUAL=${CMD/\{\}/${QITEM-}}
 
 	local PID
 
@@ -386,17 +386,17 @@ function RUN() {
 		OUTPUT "STARTING"
 
 		#We set the status at 129 initially so we are re-queued if for some reason we do not finish and update the status
-		echo "129" > "${STATUS_PATH}"
+		echo "" > "${STATUS_PATH}"
 
 		touch "${LOG_PATH}"
 
 		if [[ "${PIPE_OUTPUT_CMD_LOG_REALTIME-}" == "true" ]]; then
-			eval "trap 'echo INT or TERM received; exit 129' INT TERM; ${CMD_ACTUAL}" 2>&1 |
+			( eval "trap 'echo INT or TERM received; exit 129' INT TERM; ${CMD_ACTUAL}" 2>&1 |
 				tee "${LOG_PATH}" | while read -r LINE; do
 					OUTPUT "CMD OUTPUT: ${LINE}"
-				done
+					done )
 		else
-			eval "trap 'echo INT or TERM received; exit 129' INT TERM; ${CMD_ACTUAL}" 1> "${LOG_PATH}" 2>&1
+			( eval "trap 'echo INT or TERM received; exit 129' INT TERM; ${CMD_ACTUAL};" 1> "${LOG_PATH}" 2>&1 )
 		fi
 
 		STATUS="${PIPESTATUS[0]}"
@@ -479,9 +479,9 @@ function RUN_STOP_ALL() {
 			OUTPUT "(${QITEM}) JOB (${PID}) STOPPING..."
 
 			if [[ "${FORCE-}" == "true" ]]; then
-				RUN_KILL ${PID} || true;
+				RUN_KILL ${PID} || true
 			else
-				kill ${PID} || true;
+				kill ${PID} || true
 			fi
 		done
 
@@ -526,13 +526,16 @@ function RUN_CHECK() {
 
 		OUTPUT "PROCESSING RESULTS..."
 
-		read -r JOB_STATUS < "${STATUS_PATH}" || THROW "MISSING JOB STATUS"
+		read -r JOB_STATUS < "${STATUS_PATH}" || THROW "UNABLE TO READ STATUS_PATH (${STATUS_PATH})"
+
+		[[ -z "${JOB_STATUS}" ]] && JOB_STATUS=128
 
 		OUTPUT "STATUS (${JOB_STATUS})"
 
 		if [[ "${JOB_STATUS}" != "0" ]]; then
 
-			if (("${JOB_STATUS}" > 128)); then
+			# shellcheck disable=SC2004
+			if ((${JOB_STATUS} > 128)); then
 
 				OUTPUT "JOB DID NOT EXIT ON ITS OWN. LEAVING IN QUEUE TO TRY AGAIN."
 
@@ -553,7 +556,7 @@ function RUN_CHECK() {
 
 					QUEUE_FAILED_PUSH "${QITEM}"
 
-					(( FAILED++ ))
+					((++FAILED))
 
 					if (( ${FAILED} > 0 )); then
 
@@ -628,8 +631,10 @@ shift "$((OPTIND - 1))" # Shift off the options and optional --.
 
 
 # shellcheck disable=SC2124
-CMD="${@}"
-CMD_MD5="$(printf '%s' "${CMD[@]}" | md5sum | awk '{print $1}')"
+CMD=${*}
+
+CMD_MD5="$(printf '%s' "${CMD}" | md5sum | awk '{print $1}')"
+
 QUEUE_FILE="${PIPE_TMP_DIR}/${CMD_MD5}.queue"
 QUEUE_APPEND_FILE="${PIPE_TMP_DIR}/${CMD_MD5}.append"
 QUEUE_FAILED_FILE="${PIPE_TMP_DIR}/${CMD_MD5}.failed"
@@ -713,7 +718,7 @@ function INIT(){
 
 		OUTPUT_PREFIX_REMOVE
 
-		exit 0;
+		exit 0
 	else
 
 		#PROVIDES ${QUEUE}
@@ -752,7 +757,7 @@ function PROCESS(){
 
 			RUN "${QITEM}"
 
-			[[ "${#QUEUE_RUNNING[@]}" -ge "${PIPE_MAX_THREADS}" ]] && break;
+			[[ "${#QUEUE_RUNNING[@]}" -ge "${PIPE_MAX_THREADS}" ]] && break
 
 		done
 
@@ -774,7 +779,7 @@ function PROCESS(){
 
 		[[ "${#QUEUE[@]}" -gt 0 ]] && continue
 
-		break;
+		break
 
 	done
 

@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 
-set -o errtrace -o functrace
+[[ "${DEBUG-}" == "true" ]] && set -x
+
+[[ "${DEBUG_STEP-}" == "true" ]] && { set -x; trap 'read -p "DEBUG: Press Any Key..."' debug; }
+
+#set     -u		   -e	  ...
+set -o nounset -o errexit -o pipefail -o errtrace -o functrace
+trap 'THROW' ERR
+trap '' SIGPIPE
 
 declare -a DEBUG_PREFIX=()
 
@@ -22,7 +29,7 @@ function DEBUG_STACK () {
 
         #printf '%*s' $i '' # indent
 
-        echo "  -: $func(), $src, line $line"
+        echo "  -: ${src}:${func}():${line}"
     done
 }
 
@@ -44,7 +51,12 @@ function DEBUG() {
 
 	[[ "${DEBUG-}" != "true" ]] && return 0
 
-	echo "${DEBUG_PREFIX[*]} ${*}"
+	# shellcheck disable=SC2145
+	if (( ${#DEBUG_PREFIX[@]-} > 0 )); then
+		echo -e "${DEBUG_PREFIX[*]-} ${*}"
+	else
+		echo -e "${*}"
+	fi
 
 	return 0
 }
@@ -94,7 +106,7 @@ function DEBUG_TRACE_ENABLE() {
 
 function DEBUG_TRACE_ENABLE_IF() {
 
-	[[ "${DEBUG-}" == "true" ]] && DEBUG_ENABLE
+	[[ "${DEBUG-}" == "true" ]] && DEBUG_TRACE_ENABLE
 
 	return 0
 }
@@ -103,7 +115,11 @@ function DEBUG_TRACE_ENABLE_IF() {
 function OUTPUT() {
 
 	# shellcheck disable=SC2145
-	echo "${OUTPUT_PREFIX[@]} ${@}"
+	if (( ${#OUTPUT_PREFIX[@]-} > 0 )); then
+		echo -e "${OUTPUT_PREFIX[*]-} ${*}"
+	else
+		echo -e "${*}"
+	fi
 
 	return 0
 }
@@ -139,5 +155,3 @@ function THROW() {
 
 	exit 1
 }
-
-trap 'THROW' ERR
