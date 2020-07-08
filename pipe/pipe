@@ -2,7 +2,7 @@
 [[ "${DEBUG-}" == "true" ]] && set -x
 set -e -u -o pipefail
 
-declare SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null 2>&1 && pwd)"
+declare SCRIPT_DIR="$(cd "$(dirname $(realpath "${BASH_SOURCE[0]}"))" > /dev/null 2>&1 && pwd)"
 
 declare QITEM=""
 declare -a QITEMS=()
@@ -26,7 +26,7 @@ trap "QUIT" INT
 
 trap "QUIT_FORCE" TERM
 
-source "${SCRIPT_DIR}/inc/functions.inc.sh"
+source "${SCRIPT_DIR}/../inc/functions.inc.sh"
 
 OUTPUT_PREFIX_ADD "PIPE():"
 
